@@ -27,13 +27,15 @@ begin
     venmo_handle = null,
     zelle_handle = null,
     cashapp_handle = null,
-    default_price = null;
+    default_price = null
+  where true;
 
   -- Reset hours to a normal Mon–Sat 9–5 default.
   update booking_hours set
     is_open = (day_of_week between 1 and 6),
     start_time = '09:00',
-    end_time = '17:00';
+    end_time = '17:00'
+  where true;
 
   -- Seed a few sample bookings so the calendar/list isn't empty for demos.
   insert into bookings (customer_name, customer_phone, booking_date, booking_time, status)
@@ -45,8 +47,11 @@ end;
 $$;
 
 -- Only a logged-in owner can trigger a reset from the Dashboard button —
--- not the public booking page.
+-- not the public booking page. Explicit revoke from anon too (belt-and-
+-- suspenders — `revoke ... from public` should already cover it, but PostgREST's
+-- anon role showed it could still call this before this line was added).
 revoke all on function reset_demo_data() from public;
+revoke all on function reset_demo_data() from anon;
 grant execute on function reset_demo_data() to authenticated;
 
 -- Auto-reset every 24 hours as a safety net for whenever the manual button
