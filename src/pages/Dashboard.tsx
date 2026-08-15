@@ -601,8 +601,10 @@ function SettingsTab() {
   const [defaultPrice, setDefaultPrice] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [resetting, setResetting] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
-  useEffect(() => {
+
+  function loadSettings() {
     supabase
       .from('booking_settings')
       .select('*')
@@ -620,7 +622,23 @@ function SettingsTab() {
         }
         setLoading(false)
       })
-  }, [])
+  }
+
+  useEffect(loadSettings, [])
+
+  async function resetDemoData() {
+    if (!window.confirm('Wipe all bookings and reseed clean sample data?')) return
+    setResetting(true)
+    setMessage(null)
+    const { error } = await supabase.rpc('reset_demo_data')
+    setResetting(false)
+    if (error) {
+      setMessage(`Reset failed: ${error.message}`)
+      return
+    }
+    setMessage('Demo data reset.')
+    loadSettings()
+  }
 
   async function save(e: FormEvent) {
     e.preventDefault()
@@ -709,6 +727,17 @@ function SettingsTab() {
         {saving ? 'Saving…' : 'Save Settings'}
       </button>
       {message && <p className="text-sm text-muted-foreground">{message}</p>}
+
+      <div className="border-t border-border pt-3">
+        <label className="mb-1 block text-xs font-medium text-muted-foreground">Demo data</label>
+        <p className="mb-2 text-xs text-muted-foreground">
+          Wipes any test bookings and reseeds a clean sample set — use this right before showing the demo to
+          someone new. Also runs automatically every 24 hours.
+        </p>
+        <button type="button" onClick={resetDemoData} disabled={resetting} className="btn-secondary text-xs">
+          {resetting ? 'Resetting…' : 'Reset Demo Data'}
+        </button>
+      </div>
     </form>
   )
 }
