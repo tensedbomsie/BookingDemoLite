@@ -14,9 +14,11 @@ security definer
 set search_path = public
 as $$
 begin
-  -- Wipe anything a prospect clicked around and created.
-  delete from bookings;
-  delete from booking_blocked_dates;
+  -- Wipe anything a prospect clicked around and created. `where true` is
+  -- needed because this project has pg_safeupdate-style protection against
+  -- unqualified DELETEs — the clause is a no-op filter, still deletes all rows.
+  delete from bookings where true;
+  delete from booking_blocked_dates where true;
 
   -- Reset settings to a clean default (keeps the row, just blanks it out).
   update booking_settings set
